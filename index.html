@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyDeesa Beta - City Directory</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#b71700",
+            "background": "#f8f9ff",
+            "surface": "#f8f9ff",
+            "on-background": "#121c2a",
+            "on-surface": "#121c2a"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      min-height: max(884px, 100dvh);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-background text-on-background select-none">
+  <!-- Top Navigation -->
+  <header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm h-16 flex justify-between items-center px-4">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-black text-red-700">MyDeesa Beta</h1>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 pt-24 pb-24">
+    <div id="app" class="space-y-6">
+      <div class="text-center py-12">
+        <p class="text-lg text-gray-600">Loading Deesa Directory...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJy-xzoHUdMv8wL4fZNJW9PO7u2bPsanbYNAQX2dxjyd8I3K1ZFUbpNAfPSgbmq6PKS1pwtILbVJpub?gid=462474319&single=true&output=csv";
+      
+      Papa.parse(sheetCSV, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          const data = results.data.filter(row => row.Name && row.Name.trim());
+          document.getElementById('app').innerHTML = '<h2 class="text-2xl font-bold mb-4">Deesa Directory (' + data.length + ' listings)</h2><p class="text-green-600 font-bold">✓ Data loaded successfully!</p>';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
