@@ -1,1 +1,194 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MyDeesa - City Directory</title><style>:root{--md-red:#fd4326;--md-yellow:#f8d92f;--md-dark:#1f2937;--md-light:#f8fafc;--md-border:#e2e8f0;--md-text:#1e293b;--md-text-muted:#64748b;--bg-color:#fffaf0}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:var(--bg-color)}#app{max-width:1200px;margin:0 auto;padding:16px}.search-box{width:100%;padding:12px 16px;border:1px solid #e2e8f0;border-radius:50px;font-size:16px;margin-bottom:24px;outline:none}.search-box:focus{border-color:var(--md-red);box-shadow:0 0 0 3px rgba(253,67,38,0.1)}.section-title{font-size:18px;font-weight:800;margin:24px 0 16px 0;display:flex;justify-content:space-between;align-items:center}.view-all{color:var(--md-red);cursor:pointer;font-size:14px}.categories{display:flex;gap:12px;overflow-x:auto;padding:12px 0;margin-bottom:24px}.cat-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:60px}.cat-icon{width:55px;height:55px;border-radius:50%;background:#3f7b60;color:white;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;transition:all 0.2s}.cat-icon:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}.cat-name{font-size:10px;text-align:center;width:70px;line-height:1.2}.subcats{display:flex;gap:8px;overflow-x:auto;padding:12px 0;margin-bottom:24px}.subcat-pill{white-space:nowrap;padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}.subcat-pill:hover,.subcat-pill.active{background:var(--md-text);color:white;border-color:var(--md-text)}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:20px}.card{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;transition:all 0.2s}.card:hover{transform:translateY(-4px);box-shadow:0 10px 20px rgba(0,0,0,0.1)}.card-img-wrap{position:relative;width:100%;height:180px}.card-img{width:100%;height:100%;object-fit:cover;border-bottom:3px solid var(--md-yellow)}.view-gallery{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:white;padding:6px 12px;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:4px}.card-body{padding:16px}.card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}.card-title{font-size:16px;font-weight:700;flex:1}.verified{display:inline-flex;align-items:center;gap:4px;color:#2563eb;font-size:12px;font-weight:600}.info-btn{width:20px;height:20px;background:#64748b;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;font-weight:bold}.card-cat{display:inline-block;background:var(--md-yellow);color:#272727;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-bottom:8px}.card-service-desc{background:var(--md-yellow);color:#272727;padding:8px;border-radius:4px;font-size:11px;font-weight:600;margin-bottom:12px}.card-detail{font-size:13px;margin-bottom:6px;display:flex;align-items:flex-start;gap:6px}.card-detail strong{min-width:60px;color:#64748b}.card-detail span{flex:1;color:#1e293b}.map-pin{color:var(--md-red);font-size:16px;margin-left:4px}.card-btns{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}.btn{flex:1;min-width:70px;padding:10px 4px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;color:white;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px}.btn-call{background:var(--md-red)}.btn-wa{background:#25D366}.btn-web{background:#272727}.loader{text-align:center;padding:40px;color:var(--md-red);font-weight:600}@media(max-width:640px){.cards{grid-template-columns:1fr}.cat-icon{width:50px;height:50px;font-size:22px}.btn{font-size:10px;padding:8px 3px}}</style></head><body><div id="app"><input type="text" class="search-box" id="search" placeholder="Search by name or category..."><div class="loader" id="loader">Loading directory...</div><div class="section-title" id="catSection" style="display:none">Explore Categories<span class="view-all" onclick="loadAll()">VIEW ALL ›</span></div><div class="categories" id="categories"></div><div id="subcatSection" style="display:none"><div class="subcats" id="subcats"></div></div><div class="section-title">All Listings<span id="count">(0)</span></div><div class="cards" id="cards"></div></div><script>let allData=[];let catMap=new Map();let currentCat=null;async function loadData(){try{const sheetUrl='https://docs.google.com/spreadsheets/d/e/2PACX-1vSJy-xzoHUd_Mv8wL4fZNJW9PO7u2bPsanbYNAQX2dxjyd8I3K1ZFUb_pNAfPSgbmq6PKS1pwtILbVJ/pub?gid=462474319&single=true&output=csv';const response=await fetch(sheetUrl);if(!response.ok)throw new Error('Network response failed');const csv=await response.text();allData=parseCSV(csv);processData();renderCategories();loadAll();}catch(e){document.getElementById('loader').innerHTML='<span style="color:red">Error loading data. Please refresh the page.</span>';console.error('Load error:',e);}}function parseCSV(csv){const lines=csv.split('\n');const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));const data=[];for(let i=1;i<lines.length;i++){if(!lines[i].trim())continue;const values=lines[i].split(',').map(v=>v.trim().replace(/"/g,''));const obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');if(obj.Name)data.push(obj);}return data;}function processData(){allData.forEach(item=>{const cat=(item.Category||'').replace(/\[\[\]\]/g,'').trim();if(cat){if(!catMap.has(cat)){catMap.set(cat,new Set());}const subcat=(item['Sub category']||'').trim();if(subcat&&subcat!==cat){catMap.get(cat).add(subcat);}}})}function renderCategories(){let html='';catMap.forEach((subs,cat)=>{const letter=cat.charAt(0).toUpperCase();html+=`<div class="cat-item" onclick="selectCat('${cat.replace(/'/g,"\\'")}')"><div class="cat-icon">${letter}</div><div class="cat-name">${cat}</div></div>`;});document.getElementById('categories').innerHTML=html;document.getElementById('catSection').style.display='block';}function selectCat(cat){currentCat=cat;const subs=catMap.get(cat);let html=`<div class="subcat-pill active" onclick="selectSubcat('ALL')">All</div>`;subs.forEach(sub=>{html+=`<div class="subcat-pill" onclick="selectSubcat('${sub.replace(/'/g,"\\'")}')">` +sub+'</div>';});document.getElementById('subcats').innerHTML=html;document.getElementById('subcatSection').style.display='block';selectSubcat('ALL');}function selectSubcat(sub){document.querySelectorAll('.subcat-pill').forEach(el=>el.classList.remove('active'));event.target.classList.add('active');const filtered=allData.filter(item=>{const c=(item.Category||'').replace(/\[\[\]\]/g,'').trim();const s=(item['Sub category']||'').trim();if(c!==currentCat)return false;if(sub==='ALL')return true;return s===sub;});document.getElementById('count').textContent=`(${filtered.length})`;renderCards(filtered);}function loadAll(){currentCat=null;document.getElementById('subcatSection').style.display='none';document.getElementById('count').textContent=`(${allData.length})`;renderCards(allData);}function renderCards(items){let html='';items.slice(0,100).forEach(item=>{const name=item.Name||'Unknown';const cat=(item.Category||'').replace(/\[\[\]\]/g,'').trim();const mobile=(item.Mobile||'').trim();const location=(item.Location||'').trim();const mapLink=(item['Map link']||'').trim();const website=(item.Website||'').trim();const service=(item.Service||item['Sub category']||'').trim();const serviceDesc=(item['Service description']||'').trim();const verified=(item.Verified||'').toLowerCase();const img=(item['image 1']||'').trim();let card='<div class="card">';if(img){card+=`<div class="card-img-wrap"><img src="${img}" class="card-img" loading="lazy" onerror="this.parentElement.style.display='none'"><div class="view-gallery">📸 View Gallery</div></div>`;}card+='<div class="card-body">';card+='<div class="card-header">';card+=`<h3 class="card-title">${name}</h3>`;if(verified==='yes'||verified==='true'){card+='<span class="verified">✓ Verified</span>';}card+='<div class="info-btn" title="More info">ℹ</div>';card+='</div>';card+=`<div class="card-cat">${cat}</div>`;if(serviceDesc){card+=`<div class="card-service-desc">${serviceDesc}</div>`;}if(service){card+=`<div class="card-detail"><strong>Service:</strong><span>${service}</span></div>`;}if(location){let locHtml=`<div class="card-detail"><strong>Loc:</strong><span>${location}`;if(mapLink){locHtml+=` <a href="${mapLink}" target="_blank" class="map-pin">📍</a>`;}locHtml+='</span></div>';card+=locHtml;}card+='<div class="card-btns">';if(mobile){const phone=mobile.replace(/[^0-9]/g,'');card+=`<a href="tel:${phone}" class="btn btn-call">📞 Call</a>`;card+=`<a href="https://wa.me/${phone}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>`;}if(website){const url=website.startsWith('http')?website:'https://'+website;card+=`<a href="${url}" target="_blank" class="btn btn-web">🌐 Website</a>`;}card+='</div>';card+='</div></div>';html+=card;});document.getElementById('cards').innerHTML=html||'<div class="loader">No results found.</div>';document.getElementById('loader').style.display='none';}document.getElementById('search').addEventListener('input',(e)=>{const q=e.target.value.toLowerCase();if(!q){loadAll();return;}const filtered=allData.filter(item=>{return(item.Name||'').toLowerCase().includes(q)||(item.Category||'').toLowerCase().includes(q)||(item.Location||'').toLowerCase().includes(q);});document.getElementById('count').textContent=`Search: ${q} (${filtered.length})`;renderCards(filtered);});loadData();</script></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MyDeesa - City Directory</title><style>
+:root{--md-red:#fd4326;--md-yellow:#f8d92f;--md-dark:#1f2937;--md-light:#f8fafc;--md-border:#e2e8f0;--md-text:#1e293b;--md-text-muted:#64748b;--bg-color:#fffaf0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:var(--bg-color)}
+#app{max-width:1200px;margin:0 auto;padding:16px}
+.search-box{width:100%;padding:12px 16px;border:1px solid #e2e8f0;border-radius:50px;font-size:16px;margin-bottom:24px;outline:none}
+.search-box:focus{border-color:var(--md-red);box-shadow:0 0 0 3px rgba(253,67,38,0.1)}
+.section-title{font-size:18px;font-weight:800;margin:24px 0 16px 0;display:flex;justify-content:space-between;align-items:center}
+.view-all{color:var(--md-red);cursor:pointer;font-size:14px}
+.categories{display:flex;gap:12px;overflow-x:auto;padding:12px 0;margin-bottom:24px;scrollbar-width: thin;}
+.cat-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:60px}
+.cat-icon{width:55px;height:55px;border-radius:50%;background:#3f7b60;color:white;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.cat-icon:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.cat-name{font-size:10px;text-align:center;width:70px;line-height:1.2}
+.subcats{display:flex;gap:8px;overflow-x:auto;padding:12px 0;margin-bottom:24px;scrollbar-width: thin;}
+.subcat-pill{white-space:nowrap;padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.subcat-pill:hover,.subcat-pill.active{background:var(--md-text);color:white;border-color:var(--md-text)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:20px}
+.card{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;transition:all 0.2s;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-4px);box-shadow:0 10px 20px rgba(0,0,0,0.1)}
+.card-img-wrap{position:relative;width:100%;height:180px;background:#eee}
+.card-img{width:100%;height:100%;object-fit:cover;border-bottom:3px solid var(--md-yellow)}
+.view-gallery{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:white;padding:6px 12px;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:4px}
+.card-body{padding:16px;flex:1;display:flex;flex-direction:column}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.card-title{font-size:16px;font-weight:700;flex:1}
+.verified-badge{display:inline-flex;align-items:center;gap:4px;color:#2563eb;font-size:11px;font-weight:700;background:rgba(37,99,235,0.1);padding:2px 6px;border-radius:4px}
+.info-btn{width:20px;height:20px;background:#64748b;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;font-weight:bold}
+.card-cat{display:inline-block;background:var(--md-yellow);color:#272727;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-bottom:8px}
+.card-info-scroll{background:var(--md-yellow);color:#272727;padding:8px;border-radius:4px;font-size:11px;font-weight:600;margin-bottom:12px;max-height:60px;overflow-y:auto;scrollbar-width: thin;}
+.card-detail{font-size:13px;margin-bottom:6px;display:flex;align-items:flex-start;gap:6px}
+.card-detail strong{min-width:60px;color:#64748b}
+.card-detail span{flex:1;color:#1e293b}
+.map-pin{color:var(--md-red);font-size:16px;margin-left:4px}
+.card-btns{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap;padding-top:12px}
+.btn{flex:1;min-width:80px;padding:10px 4px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;color:white;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px}
+.btn-call{background:var(--md-red)}
+.btn-wa{background:#25D366}
+.btn-web{background:#272727}
+.loader{text-align:center;padding:40px;color:var(--md-red);font-weight:600}
+@media(max-width:640px){.cards{grid-template-columns:1fr}.cat-icon{width:50px;height:50px;font-size:22px}.btn{font-size:10px;padding:8px 3px}}
+</style></head><body><div id="app"><input type="text" class="search-box" id="search" placeholder="Search by name or category..."><div class="loader" id="loader">Loading directory...</div><div class="section-title" id="catSection" style="display:none">Explore Categories<span class="view-all" onclick="loadAll()">VIEW ALL ›</span></div><div class="categories" id="categories"></div><div id="subcatSection" style="display:none"><div class="subcats" id="subcats"></div></div><div class="section-title">All Listings<span id="count">(0)</span></div><div class="cards" id="cards"></div></div><script>
+let allData=[];let catMap=new Map();let currentCat=null;
+async function loadData(){
+try{
+const sheetUrl='https://docs.google.com/spreadsheets/d/e/2PACX-1vSJy-xzoHUd_Mv8wL4fZNJW9PO7u2bPsanbYNAQX2dxjyd8I3K1ZFUb_pNAfPSgbmq6PKS1pwtILbVJ/pub?gid=462474319&single=true&output=csv';
+const response=await fetch(sheetUrl);
+if(!response.ok)throw new Error('Network response failed');
+const csv=await response.text();
+allData=parseCSV(csv);
+processData();
+renderCategories();
+loadAll();
+}catch(e){
+document.getElementById('loader').innerHTML='<span style="color:red">Error loading data.</span>';
+console.error('Load error:',e);
+}
+}
+function parseCSV(csv){
+const lines=csv.split('
+');
+const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+const data=[];
+for(let i=1;i<lines.length;i++){
+if(!lines[i].trim())continue;
+const values=[];let current='';let inQuotes=false;
+for(let char of lines[i]){
+if(char==='"' && !inQuotes){inQuotes=true;}
+else if(char==='"' && inQuotes){inQuotes=false;}
+else if(char===',' && !inQuotes){values.push(current.trim());current='';}
+else{current+=char;}
+}
+values.push(current.trim());
+const obj={};
+headers.forEach((h,idx)=>obj[h]=values[idx]?.replace(/"/g,'')||'');
+if(obj.Name)data.push(obj);
+}
+return data;
+}
+function processData(){
+allData.forEach(item=>{
+const cat=(item.Category||'').replace(/[\[\]]/g,'').trim();
+if(cat){
+if(!catMap.has(cat)){catMap.set(cat,new Set());}
+const subcat=(item['Sub category']||'').trim();
+if(subcat&&subcat!==cat){catMap.get(cat).add(subcat);}
+}
+});
+}
+function renderCategories(){
+let html='';
+catMap.forEach((subs,cat)=>{
+const letter=cat.charAt(0).toUpperCase();
+html+=`<div class="cat-item" onclick="selectCat('${cat.replace(/'/g,"\\'")}')"><div class="cat-icon">${letter}</div><div class="cat-name">${cat}</div></div>`;
+});
+document.getElementById('categories').innerHTML=html;
+document.getElementById('catSection').style.display='block';
+}
+function selectCat(cat){
+currentCat=cat;
+const subs=catMap.get(cat);
+let html=`<div class="subcat-pill active" onclick="selectSubcat('ALL')">All</div>`;
+subs.forEach(sub=>{
+html+=`<div class="subcat-pill" onclick="selectSubcat('${sub.replace(/'/g,"\\'")}')">${sub}</div>`;
+});
+document.getElementById('subcats').innerHTML=html;
+document.getElementById('subcatSection').style.display='block';
+selectSubcat('ALL');
+}
+function selectSubcat(sub){
+document.querySelectorAll('.subcat-pill').forEach(el=>el.classList.remove('active'));
+if(event) event.target.classList.add('active');
+const filtered=allData.filter(item=>{
+const c=(item.Category||'').replace(/[\[\]]/g,'').trim();
+const s=(item['Sub category']||'').trim();
+if(c!==currentCat)return false;
+if(sub==='ALL')return true;
+return s===sub;
+});
+document.getElementById('count').textContent=`(${filtered.length})`;
+renderCards(filtered);
+}
+function loadAll(){
+currentCat=null;
+document.getElementById('subcatSection').style.display='none';
+document.getElementById('count').textContent=`(${allData.length})`;
+renderCards(allData);
+}
+function renderCards(items){
+let html='';
+items.slice(0,100).forEach(item=>{
+const name=item.Name||'Unknown';
+const cat=(item.Category||'').replace(/[\[\]]/g,'').trim();
+const mobile=(item.Mobile||'').trim();
+const location=(item.Location||'').trim();
+const mapLink=(item['Map pin']||item['Map link']||'').trim();
+const website=(item.Website||'').trim();
+const service=(item['Sub category']||item.Service||'').trim();
+const info=(item.info||item['Service description']||'').trim();
+const verified=(item.Verified||'').toLowerCase();
+const img=(item['image 1']||'').trim();
+let card='<div class="card">';
+if(img){
+card+=`<div class="card-img-wrap"><img src="${img}" class="card-img" loading="lazy" onerror="this.parentElement.style.display='none'"><div class="view-gallery">📸 View Gallery</div></div>`;
+}
+card+='<div class="card-body">';
+card+='<div class="card-header">';
+card+=`<h3 class="card-title">${name}</h3>`;
+if(verified.includes('verified') || verified==='yes' || verified==='true'){
+card+='<span class="verified-badge">✓ Verified</span>';
+}
+card+='<div class="info-btn" title="More info">ℹ</div>';
+card+='</div>';
+card+=`<div class="card-cat">${cat}</div>`;
+if(info){
+card+=`<div class="card-info-scroll">${info}</div>`;
+}
+if(service){
+card+=`<div class="card-detail"><strong>Service:</strong><span>${service}</span></div>`;
+}
+if(location){
+let locHtml=`<div class="card-detail"><strong>Loc:</strong><span>${location}`;
+if(mapLink){locHtml+=` <a href="${mapLink}" target="_blank" class="map-pin">📍</a>`;}
+locHtml+='</span></div>';
+card+=locHtml;
+}
+card+='<div class="card-btns">';
+if(mobile){
+const phone=mobile.replace(/[^0-9]/g,'');
+card+=`<a href="tel:${phone}" class="btn btn-call">📞 Call</a>`;
+card+=`<a href="https://wa.me/${phone}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>`;
+}
+if(website && website!=='tel:'){
+const url=website.startsWith('http')?website:'https://'+website;
+card+=`<a href="${url}" target="_blank" class="btn btn-web">🌐 Website</a>`;
+}
+card+='</div>';
+card+='</div></div>';
+html+=card;
+});
+document.getElementById('cards').innerHTML=html||'<div class="loader">No results found.</div>';
+document.getElementById('loader').style.display='none';
+}
+document.getElementById('search').addEventListener('input',(e)=>{
+const q=e.target.value.toLowerCase();
+if(!q){loadAll();return;}
+const filtered=allData.filter(item=>{
+return(item.Name||'').toLowerCase().includes(q)||(item.Category||'').toLowerCase().includes(q)||(item.Location||'').toLowerCase().includes(q);
+});
+document.getElementById('count').textContent=`Search: ${q} (${filtered.length})`;
+renderCards(filtered);
+});
+loadData();
+</script></body></html>
