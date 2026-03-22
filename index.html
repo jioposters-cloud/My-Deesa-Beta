@@ -1,69 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MyDeesa Beta - City Directory</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-  <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "primary": "#b71700",
-            "background": "#f8f9ff",
-            "surface": "#f8f9ff",
-            "on-background": "#121c2a",
-            "on-surface": "#121c2a"
-          }
-        }
-      }
-    };
-  </script>
-  <style>
-    body {
-      min-height: max(884px, 100dvh);
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .hide-scroll::-webkit-scrollbar { display: none; }
-    .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MyDeesa - City Directory</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+<style>
+:root{--md-red:#fd4326;--md-yellow:#f8d92f;--md-dark:#1f2937;--md-light:#f8fafc;--md-border:#e2e8f0;--md-text:#1e293b;--md-text-muted:#64748b;--bg-color:#fffaf0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:var(--bg-color)}
+#custom-directory-app{max-width:1200px;margin:0 auto;padding:16px}
+.search-box{width:100%;padding:16px 20px;border:1px solid #e2e8f0;border-radius:50px;font-size:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);outline:none;margin-bottom:24px}
+.search-box:focus{border-color:var(--md-red)}
+.global-marquee{width:100%;overflow:hidden;background:var(--md-dark);color:white;padding:8px 0;margin-bottom:16px;border-radius:8px;display:none}
+.marquee-text{display:inline-block;padding-left:100%;animation:scroll 45s linear infinite;font-size:14px}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+.categories-section{display:flex;gap:12px;overflow-x:auto;padding:12px 0;margin:24px 0}
+.category-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;min-width:65px}
+.cat-icon{width:60px;height:60px;border-radius:50%;background:#3f7b60;color:white;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.cat-name{font-size:11px;text-align:center;max-width:70px}
+.card-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin:24px 0}
+.data-card{background:white;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.card-image{width:100%;height:180px;object-fit:cover;border-bottom:3px solid var(--md-yellow)}
+.card-content{padding:20px}
+.card-title{font-size:18px;font-weight:700;margin-bottom:8px}
+.card-category{background:var(--md-yellow);color:#272727;padding:4px 10px;border-radius:20px;display:inline-block;font-size:12px;font-weight:700;margin-bottom:12px}
+.card-detail{font-size:14px;color:#475569;margin-bottom:8px}
+.btn-group{display:flex;gap:8px;margin-top:16px}
+.action-btn{flex:1;padding:10px 5px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;text-align:center;border:none;color:white}
+.call-btn{background:var(--md-red)}
+.wa-btn{background:#25D366}
+.web-btn{background:#272727}
+.loader{text-align:center;padding:40px;color:var(--md-red);font-weight:600}
+@media (max-width:640px){
+.card-container{grid-template-columns:1fr}
+.cat-icon{width:50px;height:50px;font-size:24px}
+}
+</style>
 </head>
-<body class="bg-background text-on-background select-none">
-  <!-- Top Navigation -->
-  <header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm h-16 flex justify-between items-center px-4">
-    <div class="flex items-center gap-3">
-      <h1 class="text-2xl font-black text-red-700">MyDeesa Beta</h1>
-    </div>
-  </header>
+<body>
+<div id="custom-directory-app">
+<input class="search-box" id="searchInput" type="text" placeholder="Search...">
+<div class="global-marquee" id="globalMarquee"><span class="marquee-text" id="globalMarqueeText"></span></div>
+<h2 style="font-size:18px;font-weight:800;margin-bottom:16px">Explore Categories</h2>
+<div class="categories-section" id="categoriesList"></div>
+<h2 style="font-size:18px;font-weight:800">All Listings <span id="listingCount" style="font-size:12px;color:#64748b">(0 listings)</span></h2>
+<div id="mainLoader" class="loader">Loading data...</div>
+<div id="dataGrid" class="card-container"></div>
+</div>
 
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 pt-24 pb-24">
-    <div id="app" class="space-y-6">
-      <div class="text-center py-12">
-        <p class="text-lg text-gray-600">Loading Deesa Directory...</p>
-      </div>
-    </div>
-  </main>
+<script>
+let allData = [];
+let catMap = new Map();
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJy-xzoHUdMv8wL4fZNJW9PO7u2bPsanbYNAQX2dxjyd8I3K1ZFUbpNAfPSgbmq6PKS1pwtILbVJpub?gid=462474319&single=true&output=csv";
-      
-      Papa.parse(sheetCSV, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          const data = results.data.filter(row => row.Name && row.Name.trim());
-          document.getElementById('app').innerHTML = '<h2 class="text-2xl font-bold mb-4">Deesa Directory (' + data.length + ' listings)</h2><p class="text-green-600 font-bold">✓ Data loaded successfully!</p>';
-        }
-      });
-    });
-  </script>
+document.addEventListener('DOMContentLoaded', function() {
+ Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSJy-xzoHUd_Mv8wL4fZNJW9PO7u2bPsanbYNAQX2dxjyd8I3K1ZFUb_pNAfPSgbmq6PKS1pwtILbVJ/pub?gid=462474319&single=true&output=csv', {
+ download: true,
+ header: true,
+ skipEmptyLines: true,
+ complete: function(results) {
+ allData = results.data.filter(r => (r.Name || '').trim());
+ document.getElementById('mainLoader').style.display = 'none';
+ init();
+ }
+ });
+
+ function init() {
+ allData.forEach(item => {
+ const cat = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
+ if (cat && !catMap.has(cat)) catMap.set(cat, true);
+ });
+ renderCats();
+ renderAll();
+ }
+
+ function renderCats() {
+ let html = '';
+ catMap.forEach((v, cat) => {
+ html += `<div class="category-item" onclick="filter('${cat.replace(/'/g, "\\'")}')"><div class="cat-icon">${cat[0].toUpperCase()}</div><div class="cat-name">${cat}</div></div>`;
+ });
+ document.getElementById('categoriesList').innerHTML = html;
+ }
+
+ function renderAll() {
+ document.getElementById('listingCount').textContent = `(${allData.length} listings)`;
+ renderCards(allData.slice(0, 100));
+ }
+
+ function filter(cat) {
+ const filtered = allData.filter(item => {
+ const c = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
+ return c === cat;
+ });
+ document.getElementById('listingCount').textContent = `${cat} (${filtered.length} listings)`;
+ renderCards(filtered);
+ }
+
+ function renderCards(items) {
+ let html = '';
+ items.forEach(item => {
+ const name = item.Name || 'Unknown';
+ const cat = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
+ const mobile = (item.Mobile || '').trim();
+ const location = (item.Location || '').trim();
+ const website = (item.Website || '').trim();
+ const img = (item['image 1'] || '').trim();
+ 
+ let card = '<div class="data-card">';
+ if (img) card += `<img src="${img}" class="card-image" loading="lazy" onerror="this.style.display='none'">`;
+ card += `<div class="card-content"><h3 class="card-title">${name}</h3><span class="card-category">${cat}</span>`;
+ if (location) card += `<div class="card-detail"><strong>Loc:</strong> ${location}</div>`;
+ card += '<div class="btn-group">';
+ if (mobile) {
+ const phone = mobile.replace(/[^0-9]/g, '');
+ card += `<a href="tel:${phone}" class="action-btn call-btn">Call</a>`;
+ card += `<a href="https://wa.me/${phone}" target="_blank" class="action-btn wa-btn">WhatsApp</a>`;
+ }
+ if (website) card += `<a href="https://${website}" target="_blank" class="action-btn web-btn">Website</a>`;
+ card += '</div></div></div>';
+ html += card;
+ });
+ document.getElementById('dataGrid').innerHTML = html;
+ }
+
+ document.getElementById('searchInput').addEventListener('input', function(e) {
+ const q = e.target.value.toLowerCase();
+ if (!q) { renderAll(); return; }
+ const filtered = allData.filter(item => {
+ const name = (item.Name || '').toLowerCase();
+ const cat = (item.Category || '').toLowerCase();
+ return name.includes(q) || cat.includes(q);
+ });
+ document.getElementById('listingCount').textContent = `Search (${filtered.length})`;
+ renderCards(filtered);
+ });
+});
+</script>
 </body>
 </html>
