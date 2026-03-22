@@ -4,137 +4,195 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MyDeesa - City Directory</title>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
 <style>
 :root{--md-red:#fd4326;--md-yellow:#f8d92f;--md-dark:#1f2937;--md-light:#f8fafc;--md-border:#e2e8f0;--md-text:#1e293b;--md-text-muted:#64748b;--bg-color:#fffaf0}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:var(--bg-color)}
-#custom-directory-app{max-width:1200px;margin:0 auto;padding:16px}
-.search-box{width:100%;padding:16px 20px;border:1px solid #e2e8f0;border-radius:50px;font-size:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);outline:none;margin-bottom:24px}
-.search-box:focus{border-color:var(--md-red)}
-.global-marquee{width:100%;overflow:hidden;background:var(--md-dark);color:white;padding:8px 0;margin-bottom:16px;border-radius:8px;display:none}
-.marquee-text{display:inline-block;padding-left:100%;animation:scroll 45s linear infinite;font-size:14px}
-@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-.categories-section{display:flex;gap:12px;overflow-x:auto;padding:12px 0;margin:24px 0}
-.category-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;min-width:65px}
-.cat-icon{width:60px;height:60px;border-radius:50%;background:#3f7b60;color:white;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center}
-.cat-name{font-size:11px;text-align:center;max-width:70px}
-.card-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin:24px 0}
-.data-card{background:white;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-.card-image{width:100%;height:180px;object-fit:cover;border-bottom:3px solid var(--md-yellow)}
-.card-content{padding:20px}
-.card-title{font-size:18px;font-weight:700;margin-bottom:8px}
-.card-category{background:var(--md-yellow);color:#272727;padding:4px 10px;border-radius:20px;display:inline-block;font-size:12px;font-weight:700;margin-bottom:12px}
-.card-detail{font-size:14px;color:#475569;margin-bottom:8px}
-.btn-group{display:flex;gap:8px;margin-top:16px}
-.action-btn{flex:1;padding:10px 5px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;text-align:center;border:none;color:white}
-.call-btn{background:var(--md-red)}
-.wa-btn{background:#25D366}
-.web-btn{background:#272727}
+#app{max-width:1200px;margin:0 auto;padding:16px}
+.search-box{width:100%;padding:12px 16px;border:1px solid #e2e8f0;border-radius:50px;font-size:16px;margin-bottom:24px;outline:none}
+.search-box:focus{border-color:var(--md-red);box-shadow:0 0 0 3px rgba(253,67,38,0.1)}
+.section-title{font-size:18px;font-weight:800;margin:24px 0 16px 0;display:flex;justify-content:space-between;align-items:center}
+.view-all{color:var(--md-red);cursor:pointer;font-size:14px}
+.categories{display:flex;gap:12px;overflow-x:auto;padding:12px 0;margin-bottom:24px}
+.cat-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:60px}
+.cat-icon{width:55px;height:55px;border-radius:50%;background:#3f7b60;color:white;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.cat-icon:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.cat-name{font-size:10px;text-align:center;width:70px;line-height:1.2}
+.subcats{display:flex;gap:8px;overflow-x:auto;padding:12px 0;margin-bottom:24px}
+.subcat-pill{white-space:nowrap;padding:8px 14px;background:white;border:1px solid #e2e8f0;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.subcat-pill:hover,.subcat-pill.active{background:var(--md-text);color:white;border-color:var(--md-text)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:20px}
+.card{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;transition:all 0.2s}
+.card:hover{transform:translateY(-4px);box-shadow:0 10px 20px rgba(0,0,0,0.1)}
+.card-img{width:100%;height:160px;object-fit:cover;border-bottom:3px solid var(--md-yellow)}
+.card-body{padding:16px}
+.card-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.card-cat{display:inline-block;background:var(--md-yellow);color:#272727;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-bottom:8px}
+.card-info{font-size:12px;color:#64748b;margin-bottom:6px}
+.card-btns{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.btn{flex:1;min-width:70px;padding:8px 4px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;color:white;text-align:center}
+.btn-call{background:var(--md-red)}.btn-wa{background:#25D366}.btn-web{background:#272727}
 .loader{text-align:center;padding:40px;color:var(--md-red);font-weight:600}
-@media (max-width:640px){
-.card-container{grid-template-columns:1fr}
-.cat-icon{width:50px;height:50px;font-size:24px}
+@media(max-width:640px){
+.cards{grid-template-columns:1fr}
+.cat-icon{width:50px;height:50px;font-size:22px}
+.btn{font-size:10px;padding:6px 3px}
 }
 </style>
 </head>
 <body>
-<div id="custom-directory-app">
-<input class="search-box" id="searchInput" type="text" placeholder="Search...">
-<div class="global-marquee" id="globalMarquee"><span class="marquee-text" id="globalMarqueeText"></span></div>
-<h2 style="font-size:18px;font-weight:800;margin-bottom:16px">Explore Categories</h2>
-<div class="categories-section" id="categoriesList"></div>
-<h2 style="font-size:18px;font-weight:800">All Listings <span id="listingCount" style="font-size:12px;color:#64748b">(0 listings)</span></h2>
-<div id="mainLoader" class="loader">Loading data...</div>
-<div id="dataGrid" class="card-container"></div>
+<div id="app">
+<input type="text" class="search-box" id="search" placeholder="Search by name or category...">
+<div id="loader" class="loader">Loading directory...</div>
+<div id="catSection" style="display:none">
+<div class="section-title">Explore Categories <span class="view-all" onclick="loadAll()">VIEW ALL ›</span></div>
+<div class="categories" id="categories"></div>
+</div>
+<div id="subcatSection" style="display:none">
+<div class="subcats" id="subcats"></div>
+</div>
+<div class="section-title">All Listings <span id="count" style="font-size:12px;color:#64748b">(0)</span></div>
+<div class="cards" id="cards"></div>
 </div>
 
 <script>
 let allData = [];
 let catMap = new Map();
+let currentCat = null;
 
-document.addEventListener('DOMContentLoaded', function() {
- Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSJy-xzoHUd_Mv8wL4fZNJW9PO7u2bPsanbYNAQX2dxjyd8I3K1ZFUb_pNAfPSgbmq6PKS1pwtILbVJ/pub?gid=462474319&single=true&output=csv', {
- download: true,
- header: true,
- skipEmptyLines: true,
- complete: function(results) {
- allData = results.data.filter(r => (r.Name || '').trim());
- document.getElementById('mainLoader').style.display = 'none';
- init();
- }
- });
+async function loadData() {
+  try {
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSJy-xzoHUd_Mv8wL4fZNJW9PO7u2bPsanbYNAQX2dxjyd8I3K1ZFUb_pNAfPSgbmq6PKS1pwtILbVJ/pub?gid=462474319&single=true&output=csv';
+    const response = await fetch(sheetUrl);
+    if (!response.ok) throw new Error('Network response failed');
+    const csv = await response.text();
+    allData = parseCSV(csv);
+    processData();
+    renderCategories();
+    loadAll();
+  } catch(e) {
+    document.getElementById('loader').innerHTML = '<span style="color:red">Error loading data. Please refresh the page.</span>';
+    console.error('Load error:', e);
+  }
+}
 
- function init() {
- allData.forEach(item => {
- const cat = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
- if (cat && !catMap.has(cat)) catMap.set(cat, true);
- });
- renderCats();
- renderAll();
- }
+function parseCSV(csv) {
+  const lines = csv.split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = values[idx] || '');
+    if (obj.Name) data.push(obj);
+  }
+  return data;
+}
 
- function renderCats() {
- let html = '';
- catMap.forEach((v, cat) => {
- html += `<div class="category-item" onclick="filter('${cat.replace(/'/g, "\\'")}')"><div class="cat-icon">${cat[0].toUpperCase()}</div><div class="cat-name">${cat}</div></div>`;
- });
- document.getElementById('categoriesList').innerHTML = html;
- }
+function processData() {
+  allData.forEach(item => {
+    const cat = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
+    if (cat) {
+      if (!catMap.has(cat)) {
+        catMap.set(cat, new Set());
+      }
+      const subcat = (item['Sub category'] || '').trim();
+      if (subcat && subcat !== cat) {
+        catMap.get(cat).add(subcat);
+      }
+    }
+  });
+}
 
- function renderAll() {
- document.getElementById('listingCount').textContent = `(${allData.length} listings)`;
- renderCards(allData.slice(0, 100));
- }
+function renderCategories() {
+  let html = '';
+  catMap.forEach((subs, cat) => {
+    const letter = cat.charAt(0).toUpperCase();
+    html += `<div class="cat-item" onclick="selectCat('${cat.replace(/'/g, "\\'")}')"><div class="cat-icon">${letter}</div><div class="cat-name">${cat}</div></div>`;
+  });
+  document.getElementById('categories').innerHTML = html;
+  document.getElementById('catSection').style.display = 'block';
+}
 
- function filter(cat) {
- const filtered = allData.filter(item => {
- const c = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
- return c === cat;
- });
- document.getElementById('listingCount').textContent = `${cat} (${filtered.length} listings)`;
- renderCards(filtered);
- }
+function selectCat(cat) {
+  currentCat = cat;
+  const subs = catMap.get(cat);
+  let html = `<div class="subcat-pill active" onclick="selectSubcat('ALL')">All</div>`;
+  subs.forEach(sub => {
+    html += `<div class="subcat-pill" onclick="selectSubcat('${sub.replace(/'/g, "\\'")}')">` + sub + '</div>';
+  });
+  document.getElementById('subcats').innerHTML = html;
+  document.getElementById('subcatSection').style.display = 'block';
+  selectSubcat('ALL');
+}
 
- function renderCards(items) {
- let html = '';
- items.forEach(item => {
- const name = item.Name || 'Unknown';
- const cat = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
- const mobile = (item.Mobile || '').trim();
- const location = (item.Location || '').trim();
- const website = (item.Website || '').trim();
- const img = (item['image 1'] || '').trim();
- 
- let card = '<div class="data-card">';
- if (img) card += `<img src="${img}" class="card-image" loading="lazy" onerror="this.style.display='none'">`;
- card += `<div class="card-content"><h3 class="card-title">${name}</h3><span class="card-category">${cat}</span>`;
- if (location) card += `<div class="card-detail"><strong>Loc:</strong> ${location}</div>`;
- card += '<div class="btn-group">';
- if (mobile) {
- const phone = mobile.replace(/[^0-9]/g, '');
- card += `<a href="tel:${phone}" class="action-btn call-btn">Call</a>`;
- card += `<a href="https://wa.me/${phone}" target="_blank" class="action-btn wa-btn">WhatsApp</a>`;
- }
- if (website) card += `<a href="https://${website}" target="_blank" class="action-btn web-btn">Website</a>`;
- card += '</div></div></div>';
- html += card;
- });
- document.getElementById('dataGrid').innerHTML = html;
- }
+function selectSubcat(sub) {
+  document.querySelectorAll('.subcat-pill').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const filtered = allData.filter(item => {
+    const c = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
+    const s = (item['Sub category'] || '').trim();
+    if (c !== currentCat) return false;
+    if (sub === 'ALL') return true;
+    return s === sub;
+  });
+  
+  document.getElementById('count').textContent = `(${filtered.length})`;
+  renderCards(filtered);
+}
 
- document.getElementById('searchInput').addEventListener('input', function(e) {
- const q = e.target.value.toLowerCase();
- if (!q) { renderAll(); return; }
- const filtered = allData.filter(item => {
- const name = (item.Name || '').toLowerCase();
- const cat = (item.Category || '').toLowerCase();
- return name.includes(q) || cat.includes(q);
- });
- document.getElementById('listingCount').textContent = `Search (${filtered.length})`;
- renderCards(filtered);
- });
+function loadAll() {
+  currentCat = null;
+  document.getElementById('subcatSection').style.display = 'none';
+  document.getElementById('count').textContent = `(${allData.length})`;
+  renderCards(allData);
+}
+
+function renderCards(items) {
+  let html = '';
+  items.slice(0, 100).forEach(item => {
+    const name = item.Name || 'Unknown';
+    const cat = (item.Category || '').replace(/\[\[\]\]/g, '').trim();
+    const mobile = (item.Mobile || '').trim();
+    const location = (item.Location || '').trim();
+    const website = (item.Website || '').trim();
+    const img = (item['image 1'] || '').trim();
+    
+    let card = '<div class="card">';
+    if (img) card += `<img src="${img}" class="card-img" loading="lazy" onerror="this.style.display='none'">`;
+    card += `<div class="card-body"><h3 class="card-title">${name}</h3><div class="card-cat">${cat}</div>`;
+    if (location) card += `<div class="card-info"><strong>Loc:</strong> ${location}</div>`;
+    card += '<div class="card-btns">';
+    if (mobile) {
+      const phone = mobile.replace(/[^0-9]/g, '');
+      card += `<a href="tel:${phone}" class="btn btn-call">Call</a>`;
+      card += `<a href="https://wa.me/${phone}" target="_blank" class="btn btn-wa">WhatsApp</a>`;
+    }
+    if (website) {
+      const url = website.startsWith('http') ? website : 'https://' + website;
+      card += `<a href="${url}" target="_blank" class="btn btn-web">Web</a>`;
+    }
+    card += '</div></div></div>';
+    html += card;
+  });
+  document.getElementById('cards').innerHTML = html || '<div class="loader">No results found.</div>';
+}
+
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  if (!q) { loadAll(); return; }
+  const filtered = allData.filter(item => {
+    return (item.Name || '').toLowerCase().includes(q) || 
+            (item.Category || '').toLowerCase().includes(q) ||
+            (item.Location || '').toLowerCase().includes(q);
+  });
+  document.getElementById('count').textContent = `Search: ${q} (${filtered.length})`;
+  renderCards(filtered);
 });
+
+loadData();
 </script>
 </body>
 </html>
